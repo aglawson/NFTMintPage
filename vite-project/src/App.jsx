@@ -1,19 +1,20 @@
 import { useState, useRef } from 'react';
 import {ethers} from 'ethers';
 import axios from 'axios';
-import {abi} from './utils';
+import {abi, url} from './utils';
 import reactLogo from './assets/react.svg';
 import './App.css';
 
 let signer;
 let provider;
 let nft;
+let etherscan = 'https://goerli.etherscan.io/tx/';
 
 const contract_address = '0x1DC556dB9960b37B7959dEd6316E754250309c8B';
 
 function App() {
   const [userAddress, setUserAddress] = useState('');
-  const inputRef = useRef(0);
+  const inputRef = useRef(1);
   async function init() {
     provider = new ethers.providers.Web3Provider(window.ethereum)
     await provider.send("eth_requestAccounts", []);
@@ -27,10 +28,28 @@ function App() {
    
     e.preventDefault();
 
-    let price = await nft.price();
+    let state = await nft.state();
+    let proof = await axios.get(url + '?address=' + userAddress);
+    //console.log(proof.data);
+    let price;
+    if(proof.data == []) {
+      if(state < 2) {
+        alert('Whitelist only');
+        return;
+      }
+      price = await nft.price();
+    } else {
+      price = await nft.alPrice();
+    }
+
+    
     const amount = inputRef.current.value;
-    console.log(price);
-    await nft.connect(signer).mint(amount, [], {value: price});
+    try{
+      const tx = await nft.connect(signer).mint(amount, proof.data, {value: (price * amount).toString()});
+      document.getElementById('tx').innerHTML = '<a href=' + etherscan + tx.hash + ' target="blank">See Transaction</a>'
+    } catch(error) {
+      alert(error.message);
+    }
   }
 
   return (
@@ -39,6 +58,7 @@ function App() {
       <div className="card">
         <p>{userAddress != '' ? 'Connected: ' + userAddress : 'Connect Wallet'}</p>
         <button onClick={() => init()}>{userAddress != '' ? 'Connected' : 'Connect Wallet'}</button>
+        <p id='tx'></p>
       <div id="mintDiv">
         <form onSubmit={e => mint(e)}>
 				<input

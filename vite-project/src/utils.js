@@ -909,3 +909,5 @@ export const abi = [
       "type": "function"
     }
   ];
+
+  export const url = '';
