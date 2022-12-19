@@ -910,4 +910,4 @@ export const abi = [
     }
   ];
 
-  export const url = '';
+  export const url = 'https://us-central1-clawsome.cloudfunctions.net/merkle';
