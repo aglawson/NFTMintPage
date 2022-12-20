@@ -15,7 +15,7 @@ const contract_address = '0x1DC556dB9960b37B7959dEd6316E754250309c8B';
 function App() {
   const [userAddress, setUserAddress] = useState('');
   const [amount, setAmount] = useState(1);
-  const inputRef = useRef(1);
+  const [message, setMessage] = useState('');
 
   function updateAmount(direction) {
     if(direction == 'up' && amount < 10) {
@@ -34,6 +34,15 @@ function App() {
     setUserAddress(await signer.getAddress());
     
     nft = new ethers.Contract(contract_address, abi, provider);
+    let state = await nft.state();
+    state = parseInt(state);
+    if(state == 0) {
+      setMessage('Not Minting Yet');
+    } else if(state == 1) {
+      setMessage('Whitelist Only');
+    } else if(state == 2) {
+      setMessage('Public Mint');
+    }
   }
 
   async function mint(e) {
@@ -65,6 +74,7 @@ function App() {
   return (
     <div className="App">
       <h1>NFT Mint Page</h1>
+      <h2>{message}</h2>
       <div className="card">
         <p>{userAddress != '' ? 'Connected: ' + userAddress : ''}</p>
         <p id='tx'></p>
