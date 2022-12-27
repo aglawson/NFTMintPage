@@ -16,6 +16,7 @@ function App() {
   const [userAddress, setUserAddress] = useState('');
   const [amount, setAmount] = useState(1);
   const [message, setMessage] = useState('');
+  const [ethBal, setEthBal] = useState(0);
 
   function updateAmount(direction) {
     if(direction == 'up' && amount < 10) {
@@ -43,6 +44,11 @@ function App() {
     } else if(state == 2) {
       setMessage('Public Mint');
     }
+    //console.log(await signer.getBalance());
+    let bal = await signer.getBalance();
+    console.log(parseInt(bal._hex));
+
+    setEthBal((parseInt(bal._hex) / 10**18).toFixed(2));
   }
 
   async function mint(e) {
@@ -77,6 +83,7 @@ function App() {
       <h2>{message}</h2>
       <div className="card">
         <p>{userAddress != '' ? 'Connected: ' + userAddress : ''}</p>
+        <p>{userAddress != '' ? 'Balance: ' + ethBal + ' ETH' : ''}</p>
         <p id='tx'></p>
 
       <div id="mintDiv">
