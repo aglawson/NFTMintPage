@@ -19,10 +19,12 @@ function App() {
   const [ethBal, setEthBal] = useState(0);
 
   function updateAmount(direction) {
-    if(direction == 'up' && amount < 10) {
-      setAmount(amount + 1);
-    } else if (direction == 'down' && amount > 1) {
-      setAmount(amount - 1);
+    if(userAddress != '') {
+      if(direction == 'up' && amount < 10) {
+        setAmount(amount + 1);
+      } else if (direction == 'down' && amount > 1) {
+        setAmount(amount - 1);
+      }
     }
   }
 
