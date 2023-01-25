@@ -1,7 +1,8 @@
 import { useState, useRef } from 'react';
 import {ethers} from 'ethers';
 import axios from 'axios';
-import {abi, url} from './utils';
+import {abi} from './utils';
+import {url} from './secret';
 import reactLogo from './assets/react.svg';
 import './App.css';
 
@@ -10,7 +11,7 @@ let provider;
 let nft;
 let etherscan = 'https://goerli.etherscan.io/tx/';
 
-const contract_address = '0x1DC556dB9960b37B7959dEd6316E754250309c8B';
+const contract_address = '0x933F6088681F5DCEB1636c839Ff75F4071D52132';
 
 function App() {
   const [userAddress, setUserAddress] = useState('');
@@ -58,10 +59,14 @@ function App() {
     e.preventDefault();
 
     let state = await nft.state();
-    let proof = await axios.get(url + '?address=' + userAddress);
+    let proof = await axios.get(`${url}merkle_proof?contract=${contract_address}$wallet=${userAddress}`);
+    console.log(proof);
     //console.log(proof.data);
+
+    proof = proof.data.success == false ? [] : proof.data.data;
+
     let price;
-    if(proof.data == []) {
+    if(proof == []) {
       if(state < 2) {
         alert('Whitelist only');
         return;
@@ -70,9 +75,12 @@ function App() {
     } else {
       price = await nft.alPrice();
     }
+    console.log(price);
+    price = parseInt(price);
+    console.log(price);
 
     try{
-      const tx = await nft.connect(signer).mint(amount, proof.data, {value: (price * amount).toString()});
+      const tx = await nft.connect(signer).mint(amount, proof, {value: (price * amount).toString()});
       document.getElementById('tx').innerHTML = '<a href=' + etherscan + tx.hash + ' target="blank">See Transaction</a>'
     } catch(error) {
       alert(error.message);
