@@ -9,11 +9,12 @@ import './App.css';
 let signer;
 let provider;
 let nft;
-let etherscan = 'https://goerli.etherscan.io/tx/';
+let etherscan = 'https://polygonscan.com/tx/';
 
-const contract_address = '0x933F6088681F5DCEB1636c839Ff75F4071D52132';
+const contract_address = '0xE9317b86295Fefd25C6a9e00A4EACF67d2A2E83B';
 
 function App() {
+
   const [userAddress, setUserAddress] = useState('');
   const [amount, setAmount] = useState(1);
   const [message, setMessage] = useState('');
@@ -31,27 +32,44 @@ function App() {
 
   async function init(e) {
     e.preventDefault();
-
-    provider = new ethers.providers.Web3Provider(window.ethereum)
-    await provider.send("eth_requestAccounts", []);
-    signer = await provider.getSigner();
-    setUserAddress(await signer.getAddress());
+    try{
+      provider = new ethers.providers.Web3Provider(window.ethereum)
+      const network = await provider.getNetwork();
     
-    nft = new ethers.Contract(contract_address, abi, provider);
-    let state = await nft.state();
-    state = parseInt(state);
-    if(state == 0) {
-      setMessage('Not Minting Yet');
-    } else if(state == 1) {
-      setMessage('Whitelist Only');
-    } else if(state == 2) {
-      setMessage('Public Mint');
-    }
-    //console.log(await signer.getBalance());
-    let bal = await signer.getBalance();
-    console.log(parseInt(bal._hex));
+      await provider.send("eth_requestAccounts", []);
+      signer = await provider.getSigner();
+      let addr = await signer.getAddress()
+      console.log(addr);
+      setUserAddress(addr);
+      console.log(userAddress);
 
-    setEthBal((parseInt(bal._hex) / 10**18).toFixed(2));
+      if(network.chainId !== 137) {
+        await window.ethereum.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: '0x89' }]
+        })
+      }
+
+      nft = new ethers.Contract(contract_address, abi, provider);
+      let state = await nft.state();
+      state = parseInt(state);
+      if(state == 0) {
+        setMessage('Not Minting Yet');
+      } else if(state == 1) {
+        setMessage('Whitelist Only');
+      } else if(state == 2) {
+        setMessage('Public Mint');
+      }
+      // console.log(await signer.getBalance());
+      // let bal = await signer.getBalance();
+      // console.log(parseInt(bal._hex));
+
+      // setEthBal((parseInt(bal._hex) / 10**18).toFixed(2));
+      return;
+    } catch  {
+      init(e)
+      //return;
+    }
   }
 
   async function mint(e) {
@@ -66,12 +84,13 @@ function App() {
     proof = proof.data.success == false ? [] : proof.data.data;
 
     let price;
-    if(proof == []) {
+    if(proof.length === 0) {
       if(state < 2) {
         alert('Whitelist only');
         return;
       }
       price = await nft.price();
+      console.log('price', price)
     } else {
       price = await nft.alPrice();
     }
@@ -83,7 +102,7 @@ function App() {
       const tx = await nft.connect(signer).mint(amount, proof, {value: (price * amount).toString()});
       document.getElementById('tx').innerHTML = '<a href=' + etherscan + tx.hash + ' target="blank">See Transaction</a>'
     } catch(error) {
-      alert(error.message);
+      alert(error.data.message);
     }
   }
 
@@ -93,7 +112,7 @@ function App() {
       <h2>{message}</h2>
       <div className="card">
         <p>{userAddress != '' ? 'Connected: ' + userAddress : ''}</p>
-        <p>{userAddress != '' ? 'Balance: ' + ethBal + ' ETH' : ''}</p>
+        {/* <p>{userAddress != '' ? 'Balance: ' + ethBal + ' ETH' : ''}</p> */}
         <p id='tx'></p>
 
       <div id="mintDiv">
